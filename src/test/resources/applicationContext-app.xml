@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:sws="http://www.springframework.org/schema/web-services"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+       default-lazy-init="false">
+
+   <!-- 属性文件读入 -->
+	<context:property-placeholder location="classpath:application-app.properties"/>
+	
+    <!-- Activates scanning of @Autowired -->
+    <context:annotation-config/>
+
+    <!-- Activates scanning of @Repository and @Service -->
+    <context:component-scan base-package="com.taven.app"/>
+    
+    <!-- Spring Web Services -->
+    <sws:annotation-driven/>
+
+	<!-- RMI服务的实现类 -->
+   <bean id="serverTimeServiceService" lazy-init="false" class="com.taven.app.rmi.spring.ServerTimeServiceImpl" />
+   
+     <!-- 由Spring发布的一个RMI服务 -->
+   <bean id="serverTimeExporter" lazy-init="false" class="org.springframework.remoting.rmi.RmiServiceExporter">
+      <property name="serviceName" value="serverTimeService"/>
+      <property name="service" ref="serverTimeServiceService"/>
+      <property name="serviceInterface" value="com.taven.app.rmi.spring.ServerTimeService"/>
+      <property name="registryPort" value="${rmi.serverport}"/>
+      <property name="servicePort" value="${rmi.serverport}"/>
+    </bean>
+		
+
+     
+</beans>

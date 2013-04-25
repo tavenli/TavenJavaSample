@@ -1,0 +1,55 @@
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+	<display-name>Archetype Created Web Application</display-name>
+
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>classpath:log4j.properties</param-value>
+	</context-param>
+
+
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			classpath*:applicationContext-web.xml
+			classpath*:applicationContext-web-resources.xml
+		</param-value>
+	</context-param>
+
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<!-- 需要在WEB-INF目录下建一个 {servlet-name}-servlet.xml 的配置文件 -->
+	<servlet>
+		<servlet-name>springweb</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	
+	<!-- 或者指定 *-servlet.xml -->
+	<!--
+ 	<servlet>
+		<servlet-name>springweb</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:springweb-servlet.xml</param-value>
+        </init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet> 
+	-->
+
+	<!--url-pattern："/" 可匹配 /welcome /welcome.do /welcome.xxx-->	
+	<!--url-pattern："*.java" 可匹配 /welcome.java -->
+	<!--url-pattern："/*" 可匹配  任意地址和后缀，但是要注意，会进入匹配的死循环，因为他会匹配 /welcome.do /welcome.jsp /welcome.jpg /welcome.js 等-->
+	<servlet-mapping>
+		<servlet-name>springweb</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+
+</web-app>

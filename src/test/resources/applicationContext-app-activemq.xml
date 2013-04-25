@@ -1,0 +1,97 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:amq="http://activemq.apache.org/schema/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+  http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd
+  http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<!-- <broker xmlns="http://activemq.apache.org/schema/core" useJmx="false"> 
+		<persistenceFactory> <journalPersistenceAdapterFactory journalLogFiles="5" 
+		dataDirectory="d:/temp/data" dataSource="#oracle-ds" /> </persistenceFactory> 
+		<transportConnectors> <transportConnector uri="tcp://127.0.0.1:${jms.serverport}" 
+		/> </transportConnectors> </broker> -->
+	<!-- <bean id="oracle-ds" class="org.apache.commons.dbcp.BasicDataSource" 
+		destroy-method="close"> <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" 
+		/> <property name="url" value="jdbc:oracle:thin:@127.0.0.1:1521:orcl" /> 
+		<property name="username" value="test" /> <property name="password" value="test" 
+		/> <property name="poolPreparedStatements" value="true" /> </bean> -->
+
+	<bean id="tcpConnector" class="org.apache.activemq.broker.TransportConnector">
+		<property name="uri" value="tcp://${jms.serverip}:${jms.serverport}"></property>
+	</bean>
+
+	<bean id="kahaPersistenceAdapter"
+		class="org.apache.activemq.store.kahadaptor.KahaPersistenceAdapter">
+		<property name="persistentIndex" value="true"></property>
+		<property name="maxDataFileLength" value="1048576"></property>
+	</bean>
+
+
+	<bean id="brokerService" class="org.apache.activemq.broker.BrokerService"
+		init-method="start" destroy-method="stop" scope="singleton">
+		<property name="brokerName" value="scheduleBroker"></property>
+		<property name="useJmx" value="false"></property>
+		<property name="persistenceAdapter" ref="kahaPersistenceAdapter"></property>
+		<property name="transportConnectors">
+			<list>
+				<ref local="tcpConnector" />
+			</list>
+		</property>
+		<property name="plugins">
+			<set>
+				<ref local="loggingBrokerPlugin" />
+				<ref local="destinationDotFilePlugin" />
+				<ref local="statisticsBrokerPlugin" />
+			</set>
+		</property>
+	</bean>
+
+	<bean id="loggingBrokerPlugin" class="org.apache.activemq.broker.util.LoggingBrokerPlugin">
+		<property name="logAll" value="true"></property>
+	</bean>
+
+	<bean id="destinationDotFilePlugin"
+		class="org.apache.activemq.broker.view.DestinationDotFilePlugin">
+		<property name="file" value="ActiveMQDestinations.dot.txt"></property>
+	</bean>
+
+	<bean id="statisticsBrokerPlugin" class="org.apache.activemq.plugin.StatisticsBrokerPlugin" />
+	<bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="tcp://${jms.serverip}:${jms.serverport}" />
+	</bean>
+
+	<!-- Spring JmsTemplate config -->
+	<!-- Spring用来发送和接收JMS的对象 -->
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="messageConverter">
+			<bean
+				class="org.springframework.jms.support.converter.SimpleMessageConverter" />
+		</property>
+	</bean>
+
+
+	<bean id="msg_queue" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg index="0" value="msg-queue" />
+	</bean>
+
+	<!-- 一个JMS的客户端（事件监听方式） -->
+	<bean id="messageListener" class="com.taven.app.jms.spring.JmsMsgProcessor">
+	</bean>
+	<bean id="jmsContainer"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="destination" ref="msg_queue" />
+		<property name="messageListener" ref="messageListener" />
+	</bean>
+
+	<!-- 带消息选取功能的收听端 -->
+	<!-- 发送方指定一个key-value，接收方会根据messageSelector设置的值来收取JMS消息，不符合的不收取 -->
+	<bean id="jmsContainer2"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="destination" ref="msg_queue" />
+		<property name="messageListener" ref="messageListener" />
+		<property name="messageSelector" value="receiver='${myapp.name}'" />
+	</bean>
+
+</beans>
